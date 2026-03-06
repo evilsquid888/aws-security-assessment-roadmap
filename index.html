@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AWS Security Assessment Roadmap</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #0a0a0b;
+    --surface: #111114;
+    --border: #1f1f23;
+    --border-light: #27272a;
+    --text: #e4e4e7;
+    --text-muted: #a1a1aa;
+    --text-dim: #71717a;
+    --text-faint: #52525b;
+    --text-ghost: #3f3f46;
+    --red: #ef4444;
+    --white: #fafafa;
+    --green: #22c55e;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.5;
+  }
+
+  .header {
+    padding: 48px 32px 0;
+    border-bottom: 1px solid #1a1a1f;
+    background: linear-gradient(180deg, #0f0f12 0%, var(--bg) 100%);
+  }
+  .header-inner { max-width: 960px; margin: 0 auto; }
+  .header-tag { font-size: 11px; letter-spacing: 4px; color: var(--red); font-weight: 700; text-transform: uppercase; }
+  .header h1 { font-size: 36px; font-weight: 800; color: var(--white); margin: 8px 0; letter-spacing: -1px; line-height: 1.1; }
+  .header h1 span { color: var(--red); }
+  .header p { font-size: 14px; color: var(--text-dim); max-width: 520px; line-height: 1.6; margin-top: 12px; font-family: 'IBM Plex Sans', sans-serif; }
+
+  .overall-progress { margin-top: 20px; display: flex; align-items: center; gap: 14px; }
+  .overall-progress-bar { flex: 1; height: 8px; background: #1a1a1f; border-radius: 4px; overflow: hidden; }
+  .overall-progress-fill { height: 100%; border-radius: 4px; transition: width 0.5s ease, background 0.3s; background: linear-gradient(90deg, var(--red), #f97316); }
+  .overall-progress-text { font-size: 12px; font-weight: 700; color: var(--text-faint); min-width: 42px; text-align: right; }
+  .overall-progress-label { font-size: 10px; letter-spacing: 2px; color: var(--text-faint); font-weight: 700; text-transform: uppercase; }
+
+  .tabs { display: flex; gap: 0; margin-top: 20px; flex-wrap: wrap; }
+  .tab { padding: 10px 20px; font-size: 12px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; background: transparent; color: var(--text-faint); border: 1px solid transparent; border-bottom: 1px solid var(--border-light); cursor: pointer; font-family: inherit; border-radius: 6px 6px 0 0; transition: all 0.2s; }
+  .tab.active { background: #1a1a1f; color: var(--white); border-color: var(--border-light); border-bottom-color: #1a1a1f; }
+  .tab:hover:not(.active) { color: var(--text-muted); }
+
+  .content { max-width: 960px; margin: 0 auto; padding: 32px 32px 80px; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  .phase { position: relative; margin-bottom: 4px; }
+  .phase-connector { position: absolute; left: 19px; top: 44px; bottom: -4px; width: 2px; }
+  .phase-header { width: 100%; display: flex; align-items: center; gap: 16px; padding: 14px 16px; background: transparent; border: 1px solid transparent; border-radius: 10px; cursor: pointer; text-align: left; font-family: inherit; transition: all 0.25s ease; color: var(--text); }
+  .phase-header:hover { background: #0e0e11; }
+  .phase.open .phase-header { background: var(--surface); border-radius: 10px 10px 0 0; }
+  .phase-node { width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; border: 2px solid; transition: box-shadow 0.3s; position: relative; }
+  .phase.open .phase-node { box-shadow: 0 0 20px rgba(255,255,255,0.1); }
+  .phase-node.completed { background: #14532d !important; border-color: var(--green) !important; }
+  .phase-node.completed::after { content: '✓'; position: absolute; font-size: 16px; color: var(--green); }
+  .phase-label { font-size: 10px; font-weight: 700; letter-spacing: 2px; }
+  .phase-subtitle { font-size: 10px; color: var(--text-faint); letter-spacing: 1px; margin-left: 10px; }
+  .phase-title { font-size: 16px; font-weight: 700; color: var(--white); margin-top: 2px; letter-spacing: 0.5px; }
+  .phase-progress-mini { font-size: 10px; color: var(--text-faint); font-weight: 600; margin-left: 8px; }
+  .phase-progress-mini.done { color: var(--green); }
+  .phase-chevron { font-size: 18px; color: var(--text-faint); transition: transform 0.2s; margin-left: auto; flex-shrink: 0; }
+  .phase.open .phase-chevron { transform: rotate(180deg); }
+  .phase-progress-bar { height: 3px; background: #1a1a1f; border-radius: 2px; margin-top: 6px; overflow: hidden; }
+  .phase-progress-fill { height: 100%; border-radius: 2px; transition: width 0.4s ease; }
+
+  .phase-body { display: none; background: var(--surface); border: 1px solid; border-top: none; border-radius: 0 0 10px 10px; padding: 20px 24px 24px; }
+  .phase.open .phase-body { display: block; }
+  .phase-desc { font-size: 13px; color: var(--text-muted); line-height: 1.6; margin-bottom: 20px; border-left: 3px solid; padding-left: 14px; font-family: 'IBM Plex Sans', sans-serif; }
+
+  .topic { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 16px 18px; margin-bottom: 12px; transition: border-color 0.3s; }
+  .topic.completed { border-color: #166534; }
+  .topic:last-child { margin-bottom: 0; }
+  .topic-header { display: flex; align-items: center; gap: 10px; }
+  .topic-checkbox { width: 20px; height: 20px; border-radius: 4px; border: 2px solid var(--border-light); background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.2s; font-size: 12px; color: transparent; font-family: inherit; padding: 0; }
+  .topic-checkbox:hover { border-color: var(--text-dim); }
+  .topic-checkbox.checked { background: #14532d; border-color: var(--green); color: var(--green); }
+  .topic-name { font-size: 13px; font-weight: 700; margin-bottom: 0; display: flex; align-items: center; gap: 8px; flex: 1; }
+  .topic.completed .topic-name { text-decoration: line-through; opacity: 0.6; }
+  .topic-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
+  .topic-details { font-size: 12px; color: var(--text-dim); line-height: 1.7; font-family: 'IBM Plex Sans', sans-serif; margin-top: 6px; padding-left: 30px; }
+  .topic.completed .topic-details { opacity: 0.4; }
+  .topic-links { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; padding-top: 10px; border-top: 1px solid #1a1a1f; padding-left: 30px; }
+  .topic-link-tag { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-family: 'JetBrains Mono', monospace; padding: 4px 10px; border-radius: 4px; text-decoration: none; transition: all 0.2s; border: 1px solid transparent; }
+  .topic-link-tag.learn { background: #0c2d1e; color: #4ade80; border-color: #166534; }
+  .topic-link-tag.learn:hover { background: #14532d; border-color: #22c55e; box-shadow: 0 0 8px #22c55e22; }
+  .topic-link-tag.tool { background: #1a1333; color: #c4b5fd; border-color: #3b2d6b; }
+  .topic-link-tag.tool:hover { background: #2e1f5e; border-color: #a78bfa; box-shadow: 0 0 8px #a78bfa22; }
+  .topic-link-icon { font-size: 10px; }
+
+  .resources { margin-top: 18px; }
+  .resources-label { font-size: 10px; letter-spacing: 2px; color: var(--text-faint); font-weight: 700; margin-bottom: 8px; }
+  .resource-item { font-size: 12px; color: var(--text-muted); padding: 4px 0; display: flex; align-items: center; gap: 8px; font-family: 'IBM Plex Sans', sans-serif; }
+  .resource-dot { font-size: 8px; }
+  .resource-link { color: var(--text-muted); text-decoration: none; border-bottom: 1px dashed #3f3f46; transition: all 0.2s; font-family: 'IBM Plex Sans', sans-serif; }
+  .resource-link:hover { color: var(--white); border-bottom-color: var(--white); }
+  .lab-link { font-size: 14px; font-weight: 700; color: var(--white); text-decoration: none; border-bottom: 1px dashed #3f3f46; transition: all 0.2s; display: inline-block; margin-bottom: 2px; }
+  .lab-link:hover { color: #60a5fa; border-bottom-color: #60a5fa; }
+  .cert-link { font-size: 14px; font-weight: 700; color: var(--white); text-decoration: none; border-bottom: 1px dashed #3f3f46; transition: all 0.2s; display: inline-block; }
+  .cert-link:hover { color: var(--red); border-bottom-color: var(--red); }
+
+  .lab-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px 20px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; }
+  .lab-focus { font-size: 12px; color: var(--text-dim); margin-top: 2px; font-family: 'IBM Plex Sans', sans-serif; }
+  .lab-badge { font-size: 10px; font-weight: 700; letter-spacing: 1.5px; padding: 4px 10px; border-radius: 4px; }
+  .lab-badge.free { background: #14532d; color: #4ade80; }
+  .lab-badge.paid { background: #7c2d12; color: #f97316; }
+  .lab-badge.freemium { background: #1e3a5f; color: #60a5fa; }
+
+  .cert-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px 20px; margin-bottom: 8px; display: flex; align-items: center; gap: 16px; }
+  .cert-num { width: 32px; height: 32px; border-radius: 6px; background: #1a1a1f; border: 1px solid var(--border-light); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; color: var(--red); flex-shrink: 0; }
+  .cert-stage { font-size: 11px; color: var(--text-faint); margin-top: 2px; letter-spacing: 1px; text-transform: uppercase; }
+  .cert-dots { display: flex; gap: 3px; margin-left: auto; flex-shrink: 0; }
+  .cert-dot { width: 8px; height: 8px; border-radius: 2px; }
+  .cert-dot.filled { background: var(--red); }
+  .cert-dot.empty { background: var(--border); }
+
+  .weekly-day { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px 20px; margin-bottom: 8px; display: flex; align-items: center; gap: 14px; transition: border-color 0.3s; }
+  .weekly-day.checked-day { border-color: #166534; }
+  .weekly-checkbox { width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--border-light); background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.2s; font-size: 12px; color: transparent; font-family: inherit; padding: 0; }
+  .weekly-checkbox:hover { border-color: var(--text-dim); }
+  .weekly-checkbox.checked { background: #14532d; border-color: var(--green); color: var(--green); }
+  .weekly-day-name { font-size: 13px; font-weight: 700; min-width: 100px; }
+  .weekly-task { font-size: 12px; color: var(--text-dim); flex: 1; font-family: 'IBM Plex Sans', sans-serif; }
+  .weekly-day.checked-day .weekly-task { opacity: 0.5; text-decoration: line-through; }
+  .weekly-arrow { color: var(--text-faint); font-size: 12px; }
+  .weekly-reset-row { display: flex; justify-content: space-between; align-items: center; margin-top: 16px; padding-top: 16px; border-top: 1px solid #1a1a1f; }
+  .weekly-streak { font-size: 12px; color: var(--text-faint); font-family: 'IBM Plex Sans', sans-serif; }
+  .weekly-streak strong { color: var(--green); }
+
+  .intro-text { font-size: 13px; color: var(--text-dim); margin-bottom: 24px; line-height: 1.6; font-family: 'IBM Plex Sans', sans-serif; }
+  .reset-btn { font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; padding: 6px 14px; border-radius: 4px; background: #1a1a1f; color: var(--text-faint); border: 1px solid var(--border); cursor: pointer; font-family: inherit; transition: all 0.2s; }
+  .reset-btn:hover { background: #7c2d12; color: #f97316; border-color: #f97316; }
+
+  .footer { margin-top: 48px; padding: 20px 0; border-top: 1px solid #1a1a1f; font-size: 11px; color: var(--text-ghost); line-height: 1.7; font-family: 'IBM Plex Sans', sans-serif; display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+  .footer strong { color: var(--text-faint); }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .phase-body { animation: fadeIn 0.25s ease; }
+  @keyframes checkPop { 0% { transform: scale(1); } 50% { transform: scale(1.3); } 100% { transform: scale(1); } }
+  .check-pop { animation: checkPop 0.25s ease; }
+
+  @media (max-width: 640px) {
+    .header { padding: 32px 16px 0; }
+    .header h1 { font-size: 26px; }
+    .content { padding: 24px 16px 60px; }
+    .lab-card { flex-direction: column; align-items: flex-start; gap: 10px; }
+    .cert-card { flex-wrap: wrap; }
+    .cert-dots { margin-left: 0; margin-top: 4px; }
+    .weekly-day-name { min-width: 70px; font-size: 11px; }
+    .tab { padding: 8px 12px; font-size: 10px; letter-spacing: 1px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-inner">
+    <div class="header-tag">▲ Security Assessment Track</div>
+    <h1>AWS Security<br><span>Assessment Roadmap</span></h1>
+    <p>A structured path from zero to professional-grade AWS security assessments. Built for pentesters, auditors, and security engineers.</p>
+    <div class="overall-progress">
+      <span class="overall-progress-label">Progress</span>
+      <div class="overall-progress-bar">
+        <div class="overall-progress-fill" id="overall-fill" style="width: 0%"></div>
+      </div>
+      <span class="overall-progress-text" id="overall-text">0%</span>
+    </div>
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('roadmap', this)">◈ Roadmap</button>
+      <button class="tab" onclick="switchTab('weekly', this)">🗓 Weekly</button>
+      <button class="tab" onclick="switchTab('labs', this)">⚡ Labs</button>
+      <button class="tab" onclick="switchTab('certs', this)">◆ Certs</button>
+    </div>
+  </div>
+</div>
+
+<div class="content">
+  <div id="tab-roadmap" class="tab-panel active"></div>
+  <div id="tab-weekly" class="tab-panel"></div>
+  <div id="tab-labs" class="tab-panel"></div>
+  <div id="tab-certs" class="tab-panel"></div>
+  <div class="footer">
+    <div><strong>Assessment-first mindset:</strong> At every phase, practice writing findings. Even while learning foundations, document misconfigurations you discover as if they were real assessment findings — with evidence, risk rating, and remediation.</div>
+    <button class="reset-btn" onclick="resetAllProgress()">Reset All Progress</button>
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY = 'aws-security-roadmap-progress';
+const WEEKLY_KEY = 'aws-roadmap-weekly';
+
+function loadProgress() { try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; } catch(e) { return {}; } }
+function saveProgress(d) { localStorage.setItem(STORAGE_KEY, JSON.stringify(d)); }
+function toggleCheck(key) { const d = loadProgress(); d[key] = !d[key]; saveProgress(d); return d[key]; }
+function resetAllProgress() { if (confirm('Reset all progress? This cannot be undone.')) { localStorage.removeItem(STORAGE_KEY); localStorage.removeItem(WEEKLY_KEY); renderRoadmap(); renderWeekly(); updateOverallProgress(); } }
+function topicKey(pid, idx) { return 'p'+pid+'t'+idx; }
+
+const phases = [
+  { id:1, title:"FOUNDATIONS", subtitle:"Weeks 1–4", color:"#0f766e", accent:"#14b8a6", icon:"◈",
+    description:"Build your AWS & security baseline before touching assessment tools.",
+    topics:[
+      { name:"AWS Core Services Deep Dive", details:"IAM (policies, roles, trust policies, permission boundaries), VPC (subnets, NACLs, security groups, flow logs), S3 (bucket policies, ACLs, block public access), EC2 (metadata service v1/v2, user data, instance profiles), Lambda, RDS, KMS, CloudTrail, CloudWatch.",
+        links:[{text:"IAM Documentation",url:"https://docs.aws.amazon.com/IAM/latest/UserGuide/introduction.html",type:"learn"},{text:"VPC Security Guide",url:"https://docs.aws.amazon.com/vpc/latest/userguide/security.html",type:"learn"},{text:"S3 Security Best Practices",url:"https://docs.aws.amazon.com/AmazonS3/latest/userguide/security-best-practices.html",type:"learn"},{text:"EC2 Instance Metadata",url:"https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-metadata.html",type:"learn"}]},
+      { name:"Shared Responsibility Model", details:"Understand exactly what AWS secures vs. what you secure. This is the foundation of every assessment finding you'll write.",
+        links:[{text:"AWS Shared Responsibility Model",url:"https://aws.amazon.com/compliance/shared-responsibility-model/",type:"learn"},{text:"Security Pillar Whitepaper",url:"https://docs.aws.amazon.com/wellarchitected/latest/security-pillar/welcome.html",type:"learn"}]},
+      { name:"AWS CLI & SDK Proficiency", details:"Master aws configure, profiles, assume-role, STS tokens. You'll live in the CLI during assessments.",
+        links:[{text:"AWS CLI User Guide",url:"https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-welcome.html",type:"learn"},{text:"Boto3 Docs",url:"https://boto3.amazonaws.com/v1/documentation/api/latest/index.html",type:"tool"},{text:"AWS STS Reference",url:"https://docs.aws.amazon.com/STS/latest/APIReference/welcome.html",type:"learn"}]},
+      { name:"Networking & Identity Fundamentals", details:"DNS (Route 53), load balancers, CloudFront, WAF basics. Understand how traffic flows through an AWS environment.",
+        links:[{text:"AWS Networking Fundamentals",url:"https://aws.amazon.com/getting-started/aws-networking-essentials/",type:"learn"},{text:"Route 53 Guide",url:"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/Welcome.html",type:"learn"},{text:"AWS WAF Docs",url:"https://docs.aws.amazon.com/waf/latest/developerguide/waf-chapter.html",type:"learn"}]}
+    ],
+    resources:[{text:"AWS Certified Cloud Practitioner",url:"https://aws.amazon.com/certification/certified-cloud-practitioner/"},{text:"AWS Well-Architected — Security Pillar",url:"https://docs.aws.amazon.com/wellarchitected/latest/security-pillar/welcome.html"},{text:"Stephane Maarek's AWS courses",url:"https://www.udemy.com/user/stephane-maarek/"}]
+  },
+  { id:2, title:"IAM & ACCESS CONTROL", subtitle:"Weeks 5–8", color:"#7c2d12", accent:"#f97316", icon:"⬡",
+    description:"IAM misconfigurations are the #1 finding in AWS assessments. Go deep.",
+    topics:[
+      { name:"IAM Policy Language Mastery", details:"JSON policy structure, Effect/Action/Resource/Condition blocks. Understand NotAction vs Deny, wildcard abuse, policy evaluation logic.",
+        links:[{text:"IAM Policy Reference",url:"https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies.html",type:"learn"},{text:"Policy Evaluation Logic",url:"https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_evaluation-logic.html",type:"learn"},{text:"IAM Policy Simulator",url:"https://policysim.aws.amazon.com/",type:"tool"}]},
+      { name:"Privilege Escalation Paths", details:"Rhino Security Labs' 21+ IAM privesc techniques: CreatePolicyVersion, AttachUserPolicy, PutRolePolicy, AssumeRole chains, Lambda + IAM combos, PassRole abuse.",
+        links:[{text:"Rhino Security — IAM Privesc",url:"https://rhinosecuritylabs.com/aws/aws-privilege-escalation-methods-mitigation/",type:"learn"},{text:"PMapper",url:"https://github.com/nccgroup/PMapper",type:"tool"},{text:"Cloudsplaining",url:"https://github.com/salesforce/cloudsplaining",type:"tool"}]},
+      { name:"Cross-Account Access & Federation", details:"Role trust policies, external ID confusion, SAML/OIDC federation misconfigs, AWS Organizations SCPs.",
+        links:[{text:"Cross-Account Access Guide",url:"https://docs.aws.amazon.com/IAM/latest/UserGuide/tutorial_cross-account-with-roles.html",type:"learn"},{text:"SCP Best Practices",url:"https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_policies_scps.html",type:"learn"},{text:"Confused Deputy Problem",url:"https://docs.aws.amazon.com/IAM/latest/UserGuide/confused-deputy.html",type:"learn"}]},
+      { name:"Assessment Practice", details:"Use IAM Access Analyzer, policy simulator, Cloudsplaining, Parliament, and PMapper to map privilege escalation graphs.",
+        links:[{text:"IAM Access Analyzer",url:"https://docs.aws.amazon.com/IAM/latest/UserGuide/what-is-access-analyzer.html",type:"tool"},{text:"Parliament",url:"https://github.com/duo-labs/parliament",type:"tool"},{text:"PMapper",url:"https://github.com/nccgroup/PMapper",type:"tool"}]}
+    ],
+    resources:[{text:"Rhino Security — IAM Privilege Escalation",url:"https://rhinosecuritylabs.com/aws/aws-privilege-escalation-methods-mitigation/"},{text:"PMapper by NCC Group",url:"https://github.com/nccgroup/PMapper"},{text:"AWS IAM Access Analyzer docs",url:"https://docs.aws.amazon.com/IAM/latest/UserGuide/what-is-access-analyzer.html"}]
+  },
+  { id:3, title:"ASSESSMENT TOOLING", subtitle:"Weeks 9–13", color:"#4c1d95", accent:"#a78bfa", icon:"◆",
+    description:"Learn the tools that make up a professional AWS security assessment toolkit.",
+    topics:[
+      { name:"Automated Scanners", details:"Prowler (CIS, PCI-DSS, HIPAA). ScoutSuite (multi-cloud). AWS Security Hub + Config Rules. Steampipe (SQL queries against AWS APIs).",
+        links:[{text:"Prowler",url:"https://github.com/prowler-cloud/prowler",type:"tool"},{text:"ScoutSuite",url:"https://github.com/nccgroup/ScoutSuite",type:"tool"},{text:"Steampipe AWS",url:"https://hub.steampipe.io/plugins/turbot/aws",type:"tool"},{text:"AWS Security Hub",url:"https://docs.aws.amazon.com/securityhub/latest/userguide/what-is-securityhub.html",type:"learn"}]},
+      { name:"Offensive / Red Team Tools", details:"Pacu (AWS exploitation framework). CloudFox (attack paths). Enumerate-IAM (brute-force permissions). WeirdAAL. aws_consoler.",
+        links:[{text:"Pacu",url:"https://github.com/RhinoSecurityLabs/pacu",type:"tool"},{text:"CloudFox",url:"https://github.com/BishopFox/cloudfox",type:"tool"},{text:"Enumerate-IAM",url:"https://github.com/andresriancho/enumerate-iam",type:"tool"},{text:"WeirdAAL",url:"https://github.com/carnal0wnage/weirdAAL",type:"tool"}]},
+      { name:"Reconnaissance & OSINT", details:"Cloud_enum, S3Scanner, Shodan/Censys for exposed AWS assets, certificate transparency logs for subdomain discovery.",
+        links:[{text:"cloud_enum",url:"https://github.com/initstring/cloud_enum",type:"tool"},{text:"S3Scanner",url:"https://github.com/sa7mon/S3Scanner",type:"tool"},{text:"Shodan",url:"https://www.shodan.io/",type:"tool"},{text:"crt.sh",url:"https://crt.sh/",type:"tool"}]},
+      { name:"Custom Scripting", details:"Write boto3 scripts for: enumerating public resources, finding over-permissive security groups, checking encryption-at-rest, auditing CloudTrail gaps.",
+        links:[{text:"Boto3 Documentation",url:"https://boto3.amazonaws.com/v1/documentation/api/latest/index.html",type:"learn"},{text:"Prowler Custom Checks",url:"https://docs.prowler.com/projects/prowler-open-source/en/latest/",type:"learn"}]}
+    ],
+    resources:[{text:"Prowler",url:"https://github.com/prowler-cloud/prowler"},{text:"Pacu",url:"https://github.com/RhinoSecurityLabs/pacu"},{text:"CloudFox",url:"https://github.com/BishopFox/cloudfox"},{text:"Steampipe + AWS plugin",url:"https://hub.steampipe.io/plugins/turbot/aws"}]
+  },
+  { id:4, title:"ATTACK TECHNIQUES", subtitle:"Weeks 14–19", color:"#991b1b", accent:"#ef4444", icon:"✦",
+    description:"Understand real-world attack chains to assess like an attacker, not a checkbox auditor.",
+    topics:[
+      { name:"Initial Access Vectors", details:"Exposed credentials (GitHub leaks, .env files, EC2 metadata SSRF), public S3 buckets, misconfigured API Gateways, Lambda function URL abuse, Cognito misconfigs.",
+        links:[{text:"AWS TTC — Initial Access",url:"https://aws-samples.github.io/threat-technique-catalog-for-aws/Techniques/",type:"learn"},{text:"Hacking The Cloud — Initial Access",url:"https://hackingthe.cloud/aws/general-knowledge/intro_metadata_service/",type:"learn"},{text:"CloudGoat",url:"https://github.com/RhinoSecurityLabs/cloudgoat",type:"tool"},{text:"TruffleHog",url:"https://github.com/trufflesecurity/trufflehog",type:"tool"}]},
+      { name:"Post-Exploitation & Lateral Movement", details:"Credential harvesting from metadata service, SSM parameter store, Secrets Manager. Role chaining. Lambda pivot. ECS/EKS container escapes.",
+        links:[{text:"AWS TTC — Lateral Movement",url:"https://aws-samples.github.io/threat-technique-catalog-for-aws/matrix.html",type:"learn"},{text:"Hacking The Cloud — Post Exploitation",url:"https://hackingthe.cloud/aws/post_exploitation/intro/",type:"learn"},{text:"MITRE ATT&CK — Lateral Movement",url:"https://attack.mitre.org/tactics/TA0008/",type:"learn"},{text:"Pacu Wiki",url:"https://github.com/RhinoSecurityLabs/pacu/wiki",type:"tool"}]},
+      { name:"Persistence Mechanisms", details:"Backdoor IAM users/roles, malicious Lambda layers, modified AMIs, EventBridge callbacks, cross-account persistence, STS token abuse.",
+        links:[{text:"AWS TTC — Persistence",url:"https://aws-samples.github.io/threat-technique-catalog-for-aws/Techniques/",type:"learn"},{text:"MITRE ATT&CK — Persistence",url:"https://attack.mitre.org/tactics/TA0003/",type:"learn"},{text:"AWS Persistence Talk",url:"https://www.youtube.com/watch?v=pSHHiQ3aYtE",type:"learn"}]},
+      { name:"Data Exfiltration Paths", details:"S3 replication to attacker account, RDS snapshot sharing, EBS snapshot copy, DNS exfil via Route 53, VPC endpoint abuse.",
+        links:[{text:"AWS TTC — Collection & Impact",url:"https://aws-samples.github.io/threat-technique-catalog-for-aws/matrix.html",type:"learn"},{text:"MITRE ATT&CK — Exfiltration",url:"https://attack.mitre.org/tactics/TA0010/",type:"learn"},{text:"Hacking The Cloud",url:"https://hackingthe.cloud/",type:"learn"},{text:"Dufflebag",url:"https://github.com/BishopFox/dufflebag",type:"tool"}]}
+    ],
+    resources:[{text:"AWS Threat Technique Catalog (TTC)",url:"https://aws-samples.github.io/threat-technique-catalog-for-aws/"},{text:"MITRE ATT&CK Cloud Matrix",url:"https://attack.mitre.org/matrices/enterprise/cloud/"},{text:"Hacking The Cloud",url:"https://hackingthe.cloud/"},{text:"CloudGoat",url:"https://github.com/RhinoSecurityLabs/cloudgoat"}]
+  },
+  { id:5, title:"COMPLIANCE & FRAMEWORKS", subtitle:"Weeks 20–23", color:"#1e3a5f", accent:"#3b82f6", icon:"◇",
+    description:"Map your findings to frameworks that clients and organizations care about.",
+    topics:[
+      { name:"CIS AWS Foundations Benchmark", details:"The gold standard for AWS assessments. Know every control across IAM, logging, monitoring, and networking sections.",
+        links:[{text:"CIS AWS Benchmark",url:"https://www.cisecurity.org/benchmark/amazon_web_services",type:"learn"},{text:"Prowler CIS Checks",url:"https://docs.prowler.com/projects/prowler-open-source/en/latest/",type:"tool"},{text:"CIS Controls Navigator",url:"https://www.cisecurity.org/controls/cis-controls-navigator",type:"tool"}]},
+      { name:"AWS-Specific Compliance", details:"SOC 2 control mapping, PCI-DSS in AWS (cardholder data environments), HIPAA (PHI handling), FedRAMP (GovCloud).",
+        links:[{text:"AWS Compliance Programs",url:"https://aws.amazon.com/compliance/programs/",type:"learn"},{text:"AWS Artifact",url:"https://aws.amazon.com/artifact/",type:"tool"},{text:"PCI DSS on AWS",url:"https://docs.aws.amazon.com/whitepapers/latest/pci-dss-scoping-on-aws/pci-dss-scoping-on-aws.html",type:"learn"}]},
+      { name:"Assessment Report Writing", details:"Structure: Executive Summary → Methodology → Findings (severity-rated) → Remediation. Each finding needs evidence, risk rating, business impact, remediation steps.",
+        links:[{text:"OWASP Testing Guide",url:"https://owasp.org/www-project-web-security-testing-guide/",type:"learn"},{text:"CVSS Calculator",url:"https://www.first.org/cvss/calculator/3.1",type:"tool"},{text:"PlexTrac",url:"https://plextrac.com/",type:"tool"}]},
+      { name:"Risk Rating & Prioritization", details:"Contextualize severity: an admin IAM key exposed to the internet ≠ a read-only role in a dev sandbox. Factor in blast radius, data sensitivity, compensating controls.",
+        links:[{text:"NIST Risk Management",url:"https://csrc.nist.gov/projects/risk-management",type:"learn"},{text:"OWASP Risk Rating",url:"https://owasp.org/www-community/OWASP_Risk_Rating_Methodology",type:"learn"}]}
+    ],
+    resources:[{text:"CIS AWS Benchmark",url:"https://www.cisecurity.org/benchmark/amazon_web_services"},{text:"AWS Audit Manager",url:"https://aws.amazon.com/audit-manager/"},{text:"NIST 800-53 on AWS",url:"https://docs.aws.amazon.com/audit-manager/latest/userguide/NIST800-53r5.html"}]
+  },
+  { id:6, title:"ADVANCED & SPECIALIZATION", subtitle:"Weeks 24–30+", color:"#581c87", accent:"#c084fc", icon:"❖",
+    description:"Specialize in high-value assessment areas and build your professional edge.",
+    topics:[
+      { name:"Container & Serverless Security", details:"ECS/EKS: pod security, IRSA, network policies, image scanning. Lambda: function policies, env secrets, layer supply chain.",
+        links:[{text:"EKS Security Best Practices",url:"https://aws.github.io/aws-eks-best-practices/security/docs/",type:"learn"},{text:"Lambda Security",url:"https://docs.aws.amazon.com/lambda/latest/dg/lambda-security.html",type:"learn"},{text:"Trivy",url:"https://github.com/aquasecurity/trivy",type:"tool"},{text:"kube-bench",url:"https://github.com/aquasecurity/kube-bench",type:"tool"}]},
+      { name:"Infrastructure-as-Code Review", details:"Assess CloudFormation, Terraform, CDK templates for security issues. Shift-left assessment work.",
+        links:[{text:"Checkov",url:"https://github.com/bridgecrewio/checkov",type:"tool"},{text:"tfsec",url:"https://github.com/aquasecurity/tfsec",type:"tool"},{text:"cfn-nag",url:"https://github.com/stelligent/cfn_nag",type:"tool"},{text:"Semgrep",url:"https://semgrep.dev/",type:"tool"}]},
+      { name:"Incident Response & Detection", details:"Assess detection coverage: GuardDuty findings actioned? CloudTrail centralized? Alerting on root login, access key usage, privilege escalation? Map findings to AWS TTC techniques.",
+        links:[{text:"AWS Threat Technique Catalog",url:"https://aws-samples.github.io/threat-technique-catalog-for-aws/",type:"learn"},{text:"AWS GuardDuty",url:"https://docs.aws.amazon.com/guardduty/latest/ug/what-is-guardduty.html",type:"learn"},{text:"AWS IR Playbooks",url:"https://github.com/aws-samples/aws-incident-response-playbooks",type:"tool"},{text:"Stratus Red Team",url:"https://github.com/DataDog/stratus-red-team",type:"tool"}]},
+      { name:"Multi-Account & Org Assessment", details:"AWS Organizations: SCP effectiveness, account segregation, centralized logging, Control Tower guardrails.",
+        links:[{text:"AWS Orgs Best Practices",url:"https://docs.aws.amazon.com/organizations/latest/userguide/orgs_best-practices.html",type:"learn"},{text:"AWS Control Tower",url:"https://docs.aws.amazon.com/controltower/latest/userguide/what-is-control-tower.html",type:"learn"},{text:"org-formation",url:"https://github.com/org-formation/org-formation-cli",type:"tool"}]}
+    ],
+    resources:[{text:"AWS Security Specialty Cert",url:"https://aws.amazon.com/certification/certified-security-specialty/"},{text:"SANS SEC510",url:"https://www.sans.org/cyber-security-courses/cloud-security-controls-mitigations/"},{text:"fwd:cloudsec talks",url:"https://www.youtube.com/@faborysec"},{text:"tl;dr sec newsletter",url:"https://tldrsec.com/"}]
+  }
+];
+
+const weeklyHabits = [
+  {day:"Monday",task:"Read an AWS security blog post or advisory",color:"#14b8a6"},
+  {day:"Tuesday",task:"Hands-on lab (CloudGoat, Flaws.cloud, etc.)",color:"#f97316"},
+  {day:"Wednesday",task:"Tool practice — run Prowler/Pacu/ScoutSuite against a test env",color:"#a78bfa"},
+  {day:"Thursday",task:"Study AWS Threat Technique Catalog + MITRE ATT&CK Cloud + a real breach case study",color:"#ef4444"},
+  {day:"Friday",task:"Write mock findings / practice assessment reporting",color:"#3b82f6"},
+  {day:"Saturday",task:"CTFs or deeper dive into a specific service",color:"#c084fc"},
+  {day:"Sunday",task:"Rest — skim tl;dr sec newsletter or a fwd:cloudsec talk",color:"#52525b"}
+];
+
+const labs = [
+  {name:"CloudGoat",type:"free",focus:"Offensive scenarios",url:"https://github.com/RhinoSecurityLabs/cloudgoat"},
+  {name:"Flaws.cloud",type:"free",focus:"S3, EC2, IAM basics",url:"http://flaws.cloud/"},
+  {name:"Flaws2.cloud",type:"free",focus:"Attacker & defender path",url:"http://flaws2.cloud/"},
+  {name:"PentesterLab",type:"paid",focus:"Cloud exploitation",url:"https://pentesterlab.com/"},
+  {name:"HackTricks Cloud",type:"free",focus:"Cheatsheets & techniques",url:"https://cloud.hacktricks.wiki/"},
+  {name:"AWS Well-Architected Labs",type:"free",focus:"Security pillar labs",url:"https://www.wellarchitectedlabs.com/security/"},
+  {name:"TryHackMe AWS Rooms",type:"freemium",focus:"Guided AWS hacking",url:"https://tryhackme.com/"},
+  {name:"DVCA",type:"free",focus:"Vulnerable-by-design",url:"https://github.com/m6a-UdS/dvca"}
+];
+
+const certs = [
+  {name:"AWS Cloud Practitioner",stage:"Foundation",difficulty:1,url:"https://aws.amazon.com/certification/certified-cloud-practitioner/"},
+  {name:"AWS Solutions Architect Associate",stage:"Core",difficulty:2,url:"https://aws.amazon.com/certification/certified-solutions-architect-associate/"},
+  {name:"AWS Security Specialty",stage:"Specialization",difficulty:3,url:"https://aws.amazon.com/certification/certified-security-specialty/"},
+  {name:"CCSK (Cloud Security Alliance)",stage:"Vendor-neutral",difficulty:2,url:"https://cloudsecurityalliance.org/education/ccsk"},
+  {name:"Offensive Security OSCP/OSWE",stage:"Offensive Edge",difficulty:4,url:"https://www.offsec.com/courses-and-certifications/"}
+];
+
+// ========== PROGRESS ==========
+function updateOverallProgress() {
+  let total=0, done=0; const d=loadProgress();
+  phases.forEach(p => p.topics.forEach((_,j) => { total++; if(d[topicKey(p.id,j)]) done++; }));
+  const pct = total>0 ? Math.round((done/total)*100) : 0;
+  document.getElementById('overall-fill').style.width = pct+'%';
+  document.getElementById('overall-text').textContent = pct+'%';
+  document.getElementById('overall-fill').style.background = pct===100 ? 'linear-gradient(90deg, #22c55e, #4ade80)' : 'linear-gradient(90deg, #ef4444, #f97316)';
+}
+
+function toggleTopic(pid, idx) {
+  const key=topicKey(pid,idx), d=loadProgress(); d[key]=!d[key]; saveProgress(d);
+  const cb=document.getElementById('cb-'+key), card=document.getElementById('card-'+key);
+  if(cb){cb.classList.toggle('checked',d[key]);cb.textContent=d[key]?'✓':'';cb.classList.add('check-pop');setTimeout(()=>cb.classList.remove('check-pop'),300);}
+  if(card) card.classList.toggle('completed',d[key]);
+  updatePhaseProgress(pid); updateOverallProgress();
+}
+
+function updatePhaseProgress(pid) {
+  const phase=phases.find(p=>p.id===pid), d=loadProgress();
+  let done=0; phase.topics.forEach((_,j)=>{if(d[topicKey(pid,j)])done++;});
+  const total=phase.topics.length, pct=Math.round((done/total)*100);
+  const fill=document.getElementById('phase-fill-'+pid), mini=document.getElementById('phase-mini-'+pid), node=document.getElementById('phase-node-'+pid);
+  if(fill) fill.style.width=pct+'%';
+  if(mini){mini.textContent=done+'/'+total; mini.classList.toggle('done',done===total);}
+  if(node) node.classList.toggle('completed',done===total);
+}
+
+// ========== RENDER ==========
+function renderRoadmap() {
+  const container=document.getElementById('tab-roadmap'), d=loadProgress();
+  let html='';
+  phases.forEach((phase,i) => {
+    const nextAccent=i<phases.length-1?phases[i+1].accent:phase.accent;
+    let done=0; phase.topics.forEach((_,j)=>{if(d[topicKey(phase.id,j)])done++;});
+    const total=phase.topics.length, pct=Math.round((done/total)*100), allDone=done===total;
+    html+=`<div class="phase" id="phase-${phase.id}">
+      ${i<phases.length-1?`<div class="phase-connector" style="background:linear-gradient(180deg,${phase.accent}44,${nextAccent}44)"></div>`:''}
+      <button class="phase-header" onclick="togglePhase(${phase.id})" style="border-color:transparent">
+        <div class="phase-node ${allDone?'completed':''}" id="phase-node-${phase.id}" style="background:${phase.color};border-color:${phase.accent}">${allDone?'':phase.icon}</div>
+        <div style="flex:1">
+          <div style="display:flex;align-items:baseline">
+            <span class="phase-label" style="color:${phase.accent}">PHASE ${phase.id}</span>
+            <span class="phase-subtitle">${phase.subtitle}</span>
+            <span class="phase-progress-mini ${allDone?'done':''}" id="phase-mini-${phase.id}">${done}/${total}</span>
+          </div>
+          <div class="phase-title">${phase.title}</div>
+          <div class="phase-progress-bar"><div class="phase-progress-fill" id="phase-fill-${phase.id}" style="width:${pct}%;background:${phase.accent}"></div></div>
+        </div>
+        <span class="phase-chevron">▾</span>
+      </button>
+      <div class="phase-body" style="border-color:${phase.accent}33">
+        <div class="phase-desc" style="border-left-color:${phase.accent}44">${phase.description}</div>
+        <div>${phase.topics.map((t,j)=>{const key=topicKey(phase.id,j),checked=!!d[key];
+          return`<div class="topic ${checked?'completed':''}" id="card-${key}">
+            <div class="topic-header">
+              <button class="topic-checkbox ${checked?'checked':''}" id="cb-${key}" onclick="event.stopPropagation();toggleTopic(${phase.id},${j})">${checked?'✓':''}</button>
+              <div class="topic-name" style="color:${phase.accent}"><span class="topic-dot" style="background:${phase.accent}"></span>${t.name}</div>
+            </div>
+            <div class="topic-details">${t.details}</div>
+            ${t.links&&t.links.length?`<div class="topic-links">${t.links.map(l=>`<a href="${l.url}" target="_blank" rel="noopener noreferrer" class="topic-link-tag ${l.type}"><span class="topic-link-icon">${l.type==='learn'?'📖':'⚙'}</span>${l.text}</a>`).join('')}</div>`:''}</div>`}).join('')}</div>
+        <div class="resources"><div class="resources-label">KEY RESOURCES</div>
+          ${phase.resources.map(r=>`<div class="resource-item"><span class="resource-dot" style="color:${phase.accent}">■</span><a href="${r.url}" target="_blank" rel="noopener noreferrer" class="resource-link">${r.text}</a></div>`).join('')}
+        </div>
+      </div></div>`;
+  });
+  container.innerHTML=html;
+}
+
+function getWeekId(){const n=new Date(),s=new Date(n.getFullYear(),0,1),w=Math.ceil(((n-s)/864e5+s.getDay()+1)/7);return n.getFullYear()+'-W'+w;}
+function loadWeekly(){try{const s=JSON.parse(localStorage.getItem(WEEKLY_KEY));if(s&&s.week===getWeekId())return s.days||{};return{};}catch(e){return{};}}
+function saveWeekly(days){localStorage.setItem(WEEKLY_KEY,JSON.stringify({week:getWeekId(),days}));}
+
+function toggleWeekly(i){
+  const days=loadWeekly(); days[i]=!days[i]; saveWeekly(days);
+  const cb=document.getElementById('wcb-'+i), row=document.getElementById('wday-'+i);
+  if(cb){cb.classList.toggle('checked',days[i]);cb.textContent=days[i]?'✓':'';cb.classList.add('check-pop');setTimeout(()=>cb.classList.remove('check-pop'),300);}
+  if(row) row.classList.toggle('checked-day',days[i]);
+  updateWeeklyCount();
+}
+function updateWeeklyCount(){const days=loadWeekly(),done=Object.values(days).filter(Boolean).length,el=document.getElementById('weekly-count');if(el)el.innerHTML=`<strong>${done}/7</strong> completed this week (${getWeekId()})`;}
+function resetWeekly(){localStorage.removeItem(WEEKLY_KEY);renderWeekly();}
+
+function renderWeekly(){
+  const container=document.getElementById('tab-weekly'), days=loadWeekly(), done=Object.values(days).filter(Boolean).length;
+  let html=`<p class="intro-text">Repeat this cycle every week. Progress auto-resets each week — build the habit, not just the knowledge. The best assessors train like athletes.</p>`;
+  weeklyHabits.forEach((h,i)=>{const checked=!!days[i];
+    html+=`<div class="weekly-day ${checked?'checked-day':''}" id="wday-${i}">
+      <button class="weekly-checkbox ${checked?'checked':''}" id="wcb-${i}" onclick="toggleWeekly(${i})">${checked?'✓':''}</button>
+      <div class="weekly-day-name" style="color:${h.color}">${h.day}</div>
+      <span class="weekly-arrow">→</span>
+      <div class="weekly-task">${h.task}</div></div>`;
+  });
+  html+=`<div class="weekly-reset-row"><div class="weekly-streak" id="weekly-count"><strong>${done}/7</strong> completed this week (${getWeekId()})</div><button class="reset-btn" onclick="resetWeekly()">Reset Week</button></div>`;
+  container.innerHTML=html;
+}
+
+function renderLabs(){
+  const c=document.getElementById('tab-labs');let h='<p class="intro-text">Hands-on practice is non-negotiable. These platforms let you break things in safe environments.</p>';
+  labs.forEach(l=>{h+=`<div class="lab-card"><div><a href="${l.url}" target="_blank" rel="noopener noreferrer" class="lab-link">${l.name}</a><div class="lab-focus">${l.focus}</div></div><span class="lab-badge ${l.type}">${l.type.toUpperCase()}</span></div>`;});
+  c.innerHTML=h;
+}
+
+function renderCerts(){
+  const c=document.getElementById('tab-certs');let h='<p class="intro-text">Certifications validate knowledge but don\'t replace hands-on assessment experience.</p>';
+  certs.forEach((cert,i)=>{let dots='';for(let d=0;d<4;d++)dots+=`<div class="cert-dot ${d<cert.difficulty?'filled':'empty'}"></div>`;
+    h+=`<div class="cert-card"><div class="cert-num">${i+1}</div><div style="flex:1"><a href="${cert.url}" target="_blank" rel="noopener noreferrer" class="cert-link">${cert.name}</a><div class="cert-stage">${cert.stage}</div></div><div class="cert-dots">${dots}</div></div>`;});
+  c.innerHTML=h;
+}
+
+function togglePhase(id){
+  const el=document.getElementById('phase-'+id), wasOpen=el.classList.contains('open');
+  document.querySelectorAll('.phase').forEach(p=>{p.classList.remove('open');const h=p.querySelector('.phase-header');if(h)h.style.borderColor='transparent';});
+  if(!wasOpen){el.classList.add('open');const phase=phases.find(p=>p.id===id),hdr=el.querySelector('.phase-header');if(hdr)hdr.style.borderColor=phase.accent+'33';}
+}
+
+function switchTab(name,btn){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-'+name).classList.add('active');
+}
+
+renderRoadmap(); renderWeekly(); renderLabs(); renderCerts(); updateOverallProgress();
+</script>
+</body>
+</html>
