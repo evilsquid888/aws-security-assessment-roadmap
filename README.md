@@ -198,6 +198,12 @@ Assess CloudFormation, Terraform, CDK templates for security issues before deplo
 
 ⚙ [Checkov](https://github.com/bridgecrewio/checkov) · ⚙ [tfsec](https://github.com/aquasecurity/tfsec) · ⚙ [cfn-nag](https://github.com/stelligent/cfn_nag) · ⚙ [Semgrep IaC Rules](https://semgrep.dev/)
 
+### AI-Driven AppSec & AWS Security Agent
+
+AWS Security Agent (pen testing GA March 2026) performs AI-driven design review, code review, and on-demand penetration testing against pre-production targets. The assessor's job is twofold: confirm it's scoped safely — ownership-validated endpoints, scoped credentials in Secrets Manager or a vendor Lambda, ≤5 concurrent runs, no CI/CD or SIEM integration yet — and document the compliance gap. AWS explicitly states it is "not a professional penetration testing service"; its stochastic findings don't satisfy PCI-DSS or SOC 2 manual pen test requirements. Practice the coverage assessment: run the agent against a vulnerable app (e.g. Juice Shop), diff its findings against a manual pen test, and articulate the residual gap — business logic flaws, complex authorization bypasses, and chained exploits that still require human testers.
+
+📖 [AWS Security Agent User Guide](https://docs.aws.amazon.com/securityagent/latest/userguide/what-is.html) · 📖 [Security Considerations & Limitations](https://docs.aws.amazon.com/securityagent/latest/userguide/security-guidance.html) · 📖 [GA Announcement (March 2026)](https://aws.amazon.com/about-aws/whats-new/2026/03/aws-security-agent-ondemand-penetration/) · 📖 [Multi-Agent Architecture Deep Dive](https://aws.amazon.com/blogs/security/inside-aws-security-agent-a-multi-agent-architecture-for-automated-penetration-testing/)
+
 ### Incident Response & Detection Engineering
 
 Assess detection coverage: are GuardDuty findings being actioned? Are CloudTrail logs centralized and tamper-proof? Is there alerting on root login, access key usage, or privilege escalation? Map findings to AWS TTC techniques. Review IR runbooks.

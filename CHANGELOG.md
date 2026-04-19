@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Added
+- **Phase 6 — AI-Driven AppSec & AWS Security Agent** subsection covering AWS's AI-driven design review, code review, and on-demand pen testing service (GA March 2026). Frames the assessor's role around safe scoping and documenting the compliance gap (AWS's own statement that it is "not a professional penetration testing service" and does not satisfy PCI-DSS or SOC 2 manual pen test requirements). Includes links to the AWS Security Agent User Guide, Security Considerations, GA announcement, and the multi-agent architecture deep dive.
+
 ## [1.0.0] - 2026-03-05
 
 ### Added
